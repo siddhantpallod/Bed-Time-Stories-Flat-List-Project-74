@@ -1,13 +1,14 @@
 import * as React from 'react';
 import { StyleSheet, Text, View,ScrollView,TouchableOpacity,FlatList } from 'react-native';
 import {SearchBar,Header} from 'react-native-elements';
-import db from '../config'
+import db from '../config';
+import firebase from 'firebase';
 
 export default class ReadStoryScreen extends React.Component{
 
     constructor(){
         super();
-        this.setState = {
+        this.state = {
         search : '',
         dataSource : [],
         allStories : []
@@ -17,9 +18,12 @@ export default class ReadStoryScreen extends React.Component{
     retriveStories = async () => {
         var allStories = [];
         var storiesRef = await db.collection('stories').get()
-        storiesRef .docs.map((doc) => {
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
             allStories.push(doc.data())
+          })
         })
+        
         this.setState({
             allStories : allStories
         })
@@ -27,7 +31,8 @@ export default class ReadStoryScreen extends React.Component{
 
     filterSearch = (searchText) => {
         var results = this.state.allStories.filter((story)=>{
-            return story.title.toUpperCase().indexOf(searchText.toUpperCase()) > -1
+            const storyData = story.title ? story.title.toUpperCase() : ''.toUpperCase()
+            return storyData.indexOf(searchText.toUpperCase()) > -1
         })
 
         this.setState({
@@ -58,7 +63,8 @@ export default class ReadStoryScreen extends React.Component{
             inputContainerStyle={{backgroundColor:'#ffffff', borderRadius: 50}}
             inputStyle={{color:'#000000'}}
             onChangeText={(text)=>{this.filterSearch(text)}} 
-            value={this.state.search} />
+            value={this.state.search} 
+            />
     
             <ScrollView contentContainerStyle={{paddingBottom: 20}}>
               {this.state.search == ""
@@ -74,17 +80,16 @@ export default class ReadStoryScreen extends React.Component{
                   <Text style={styles.author}>Author: {data.author}</Text>
                 </View>))
               }
-              <TouchableOpacity style={styles.submit} onPress={this.retriveStories}>
-                <Text style={styles.submitText}>Refresh</Text>
+              <TouchableOpacity style={styles.submitButton} onPress={this.retriveStories}>
+                <Text style={styles.buttonText}>Refresh</Text>
               </TouchableOpacity>
 
               <FlatList 
           data={this.state.dataSource}
           extraData = {this.state.search}
           renderItem={({item})=>(
-            <View style={{ height:50, width:350,  marginTop:5}}>
-              <Text>{"Title: " + item[0]}</Text>
-              <Text>{"Author: " + item[2].Author}</Text>
+            <View>
+
             </View>
           )}
           keyExtractor= {(item, index)=> index.toString()}
@@ -105,4 +110,18 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       justifyContent: 'center',
     },
+    submitButton : {
+      backgroundColor : 'pink',
+      margin : 20,
+      borderWidth : 3,
+      borderRadius : 20,
+      width : 90,
+      alignSelf : 'center'
+  },
+  buttonText : {
+    color : 'black',
+    fontSize : 20,
+    fontFamily : 'bold',
+    alignSelf : 'center'
+},
   });
